@@ -16,55 +16,90 @@
 
 # Adapted from https://github.com/tensorflow/models/blob/master/tutorials/embedding/word2vec.py
 
-import os
-import sys
-import numpy as np
-from glob import glob
-from lxml import etree
 import re
 import tensorflow as tf
 import collections
 import pandas as pd
-
 import math
 import random
+import os
+import sys
+import matplotlib
+import numpy as np
+import logging
+import logging.config
+from glob import glob
+from lxml import etree
 from six.moves import urllib
 from six.moves import xrange  # pylint: disable=redefined-builtin
-import matplotlib
+from datetime import datetime
 matplotlib.use('Agg')
 
-BASE_DIR = '/mnt/DATA/all-of-govuk'
-OUT_DIR = '/mnt/output'
+logging.config.fileConfig('logging.conf')
+logger = logging.getLogger('pipeline')
 
+# Define various variables
 
+DATA_DIR = os.getenv('DATA_DIR')
+OUT_DIR = os.getenv('OUT_DIR')
+MODEL_DIR = os.path.join(OUT_DIR, 'saved_models')
+vocabulary_size = int(os.getenv('VOCAB_SIZE'))
+plot_only = int(os.getenv('PLOT_DIMS'))
+
+num_steps = int(os.getenv('NUM_STEPS'))
+batch_size = 128
+embedding_size = int(os.getenv('EMBEDDING_DIMS'))  # Dimension of the embedding vector.
+skip_window = int(os.getenv('SKIP_WINDOW'))       # How many words to consider left and right.
+num_skips = 2         # How many times to reuse an input to generate a label.
+
+# We pick a random validation set to sample nearest neighbors. Here we limit the
+# validation samples to the words that have a low numeric ID, which by
+# construction are also the most frequent.
+
+valid_size = 16     # Random set of words to evaluate similarity on.
+valid_window = 100  # Only pick dev samples in the head of the distribution.
+valid_examples = np.random.choice(valid_window, valid_size, replace=False)
+num_sampled = 64    # Number of negative examples to sample.
+
+# Instantiate lists and dicts to fill
 
 texts = []  # list of text samples
 labels_index = {}  # dictionary mapping label name to numeric id
 labels = []  # list of label ids
 
-filenames = [y for x in os.walk(BASE_DIR) for y in glob(os.path.join(x[0], '*.html'))]
+# Read in all html files in DATA_DIR
+
+filenames = [y for x in os.walk(DATA_DIR) for y in glob(os.path.join(x[0], '*.html'))]
 
 for fname in filenames:
     
-    file = fname.replace(BASE_DIR,'')
+    file = fname.replace(DATA_DIR,'')
     
     label_id = len(labels_index)
     labels_index[file] = label_id
     
     with open(fname, 'r', encoding = 'utf-8') as f:
+        logger.debug('Extracting text from %s', fname)
         t = f.read()
         
-        tree = etree.HTML(t)
-        r = tree.xpath('//main//text()')
-        r = ' '.join(r)
+        try:
+
+            tree = etree.HTML(t)
+            r = tree.xpath('//main//text()')
+            r = ' '.join(r)
         
-        # Clean the html
+            # Clean the html
         
-        r = r.strip().replace('\r', ' ').replace('\t', ' ').replace('\n', ' ').replace(',', ' ')
+            r = r.strip().replace('\r', ' ').replace('\t', ' ').replace('\n', ' ').replace(',', ' ')
         
-        r = r.lower()
-        r = re.sub("[^a-zA-Z]"," ",r)
-        r = " ".join(r.split())
+            r = r.lower()
+            r = re.sub("[^a-zA-Z]"," ",r)
+            r = " ".join(r.split())
+        except AttributeError as ab:
+                logger.exception('AttributeError while extracting text from %s: %s', fname, ab)
+        except StandardError as ex:
+                logger.exception('Unexpected error while extracting text from %s: %s', fname, ab)
+
         
         # Append tokens to the text list
         
@@ -72,17 +107,16 @@ for fname in filenames:
         f.close()
         labels.append(label_id)
 
-print(labels_index)
+logger.debug('labels_index: %s', labels_index)
 
 vocabulary = " ".join(texts)
 
 vocabulary = tf.compat.as_str(vocabulary).split()
 
-print(vocabulary)
+logger.debug('vocabulary: %s', vocabulary)
 
-print('Total words: ', len(vocabulary))
-print('Unique words: ', len(set(vocabulary)))
-vocabulary_size = 326
+logger.info('Total words: %s', len(vocabulary))
+logger.info('Unique words: %s', len(set(vocabulary)))
 
 def build_dataset(words, n_words):
   """Process raw inputs into a dataset."""
@@ -107,9 +141,27 @@ def build_dataset(words, n_words):
 
 data, count, dictionary, reverse_dictionary = build_dataset(vocabulary, vocabulary_size)
 
+# Save out the various lists to disk
+
+vocabulary_path = os.path.join(OUT_DIR, 'vocabulary.txt')
+dictionary_path = os.path.join(OUT_DIR, 'dictionary.txt')
+
+logger.info('Writing vocabulary to: %s', vocabulary_path)
+
+with open(vocabulary_path, 'w') as f:
+    for i in vocabulary:
+        f.write("{}\n".format(i))
+
 del vocabulary  # Hint to reduce memory.
-print('Most common words (+UNK)', count[:5])
-print('Sample data', data[:10], [reverse_dictionary[i] for i in data[:10]])
+
+logger.info('Writing vocabulary to: %s', dictionary_path)
+
+with open(dictionary_path, 'w') as f:
+    for i in dictionary:
+        f.write("{}\n".format(i))
+
+logger.debug('Most common words (+UNK): %s', count[:5])
+logger.debug('Sample data: %s ', data[:10])
 
 data_index = 0
 
@@ -143,30 +195,17 @@ def generate_batch(batch_size, num_skips, skip_window):
 
 batch, labels = generate_batch(batch_size=8, num_skips=2, skip_window=1)
 for i in range(8):
-  print(batch[i], reverse_dictionary[batch[i]],
-        '->', labels[i, 0], reverse_dictionary[labels[i, 0]])
+  logger.info('%s %s -> %s %s', batch[i], reverse_dictionary[batch[i]], 
+          labels[i, 0], reverse_dictionary[labels[i, 0]])
 
 # Step 4: Build and train a skip-gram model.
 
-batch_size = 128
-embedding_size = 128  # Dimension of the embedding vector.
-skip_window = 1       # How many words to consider left and right.
-num_skips = 2         # How many times to reuse an input to generate a label.
-
-# We pick a random validation set to sample nearest neighbors. Here we limit the
-# validation samples to the words that have a low numeric ID, which by
-# construction are also the most frequent.
-valid_size = 16     # Random set of words to evaluate similarity on.
-valid_window = 100  # Only pick dev samples in the head of the distribution.
-valid_examples = np.random.choice(valid_window, valid_size, replace=False)
-num_sampled = 64    # Number of negative examples to sample.
 
 # Setup logging with tensorboard
 
-from datetime import datetime
 
 now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-root_logdir = "tf_logs"
+root_logdir = os.path.join(OUT_DIR, "tf_logs")
 logdir = "{}/run-{}/".format(root_logdir, now)
 
 
@@ -251,17 +290,24 @@ with graph.as_default():
 
   # Add variable initializer.
   init = tf.global_variables_initializer()
+  saver = tf.train.Saver()
 
   loss_summary = tf.summary.scalar('LOSS', loss)
   file_writer = tf.summary.FileWriter(logdir, tf.get_default_graph())
 # Step 5: Begin training.
-num_steps = 15001
+
+def reset_graph(seed=42):
+    tf.reset_default_graph()
+    tf.set_random_seed(seed)
+    np.random.seed(seed)
+
+reset_graph()
 
 
 with tf.Session(graph=graph) as session:
   # We must initialize all variables before we use them.
   init.run()
-  print('Session initialized')
+  logger.info('Tensorflow session initialized')
 
   average_loss = 0
   for step in xrange(num_steps):
@@ -278,9 +324,12 @@ with tf.Session(graph=graph) as session:
       if step > 0:
         average_loss /= 2000
       # The average loss is an estimate of the loss over the last 2000 batches.
-      print('Average loss at step ', step, ': ', average_loss)
+      logger.info('Average loss at step %s: %s', step, average_loss)
       
       summary_str = loss_summary.eval(feed_dict=feed_dict)
+      
+      # Save each 2000th epoch as we go along
+      save_path = saver.save(session, os.path.join(MODEL_DIR, 'model.ckpt'))
       file_writer.add_summary(summary_str, step)
 
       average_loss = 0
@@ -296,7 +345,8 @@ with tf.Session(graph=graph) as session:
         for k in xrange(top_k):
           close_word = reverse_dictionary[nearest[k]]
           log_str = '%s %s,' % (log_str, close_word)
-        print(log_str)
+        logger.debug(log_str)
+  save_path = saver.save(session, os.path.join(MODEL_DIR, 'final_model.ckpt'))
   final_embeddings = normalized_embeddings.eval()
 
 file_writer.close()
@@ -318,31 +368,34 @@ def plot_with_labels(low_dim_embs, labels, skip_window):
 
   filename = 'tsne_skips_' + str(skip_window) + '.png' 
   out_file = os.path.join(OUT_DIR, filename)
+  logger.info('Saving TSNE plot to %s', out_file)
   plt.savefig(out_file)
 
 
 def save_weights(data, index, filename='weights.csv'):
-    assert len(index) == low_dim_embs.shape[0]
     df = pd.DataFrame(
             data = data,
-            index = labels
+            index = index
             )
+    logger.debug('weights size is %s', df.shape)
 
-    out_path = os.path.join(OUT_DIR, filename)
-    df.to_csv(out_path)
+    out_file = os.path.join(OUT_DIR, filename)
+    logger.info('Saving weights to %s', out_file)
+    df.to_csv(out_file)
 
 try:
   # pylint: disable=g-import-not-at-top
   from sklearn.manifold import TSNE
   import matplotlib.pyplot as plt
 
+  save_weights(final_embeddings, reverse_dictionary)
+
   tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000)
-  plot_only = 300
-  low_dim_embs = tsne.fit_transform(final_embeddings[:plot_only, :])
   labels = [reverse_dictionary[i] for i in range(plot_only)]
+  low_dim_embs = tsne.fit_transform(final_embeddings[:plot_only, :])
   plot_with_labels(low_dim_embs, labels, skip_window = skip_window)
-  save_weights(low_dim_embs, labels)
 
 except ImportError:
   print('Please install sklearn, matplotlib, and scipy to show embeddings.')
 
+logger.info('Finished')

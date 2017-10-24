@@ -3,3 +3,5 @@ bin
 include
 lib
 pip-selfcheck.json
+.env
+all-of-govuk
