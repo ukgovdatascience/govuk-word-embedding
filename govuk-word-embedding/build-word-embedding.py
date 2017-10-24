@@ -69,7 +69,22 @@ labels = []  # list of label ids
 
 # Read in all html files in DATA_DIR
 
+logger.info('Gathering list of files to extract text from')
+
 filenames = [y for x in os.walk(DATA_DIR) for y in glob(os.path.join(x[0], '*.html'))]
+
+logger.info('There are %s files to read', len(filenames))
+
+filenames_path = os.path.join(OUT_DIR, 'filenames.txt')
+
+logger.info('Writing filenames to: %s', filenames_path)
+
+with open(filenames_path, 'w') as f:
+    for i in filenames:
+        f.write("{}\n".format(i))
+
+logger.info('filenames list written to: %s', filenames_path)
+
 
 for fname in filenames:
     
@@ -195,7 +210,7 @@ def generate_batch(batch_size, num_skips, skip_window):
 
 batch, labels = generate_batch(batch_size=8, num_skips=2, skip_window=1)
 for i in range(8):
-  logger.info('%s %s -> %s %s', batch[i], reverse_dictionary[batch[i]], 
+  logger.debug('%s %s -> %s %s', batch[i], reverse_dictionary[batch[i]], 
           labels[i, 0], reverse_dictionary[labels[i, 0]])
 
 # Step 4: Build and train a skip-gram model.
