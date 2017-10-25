@@ -33,7 +33,8 @@ from lxml import etree
 from six.moves import urllib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 from datetime import datetime
-matplotlib.use('Agg')
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger('pipeline')
@@ -87,12 +88,19 @@ logger.info('filenames list written to: %s', filenames_path)
 
 
 for fname in filenames:
-    
+
+    logger.debug('Reading %s', fname)
+
     file = fname.replace(DATA_DIR,'')
+    
     
     label_id = len(labels_index)
     labels_index[file] = label_id
     
+    logger.debug('file: %s', file)
+    logger.debug('label_id: %s', label_id)
+    logger.debug('labels_index: %s', labels_index)
+
     with open(fname, 'r', encoding = 'utf-8') as f:
         logger.debug('Extracting text from %s', fname)
         t = f.read()
@@ -122,13 +130,10 @@ for fname in filenames:
         f.close()
         labels.append(label_id)
 
-logger.debug('labels_index: %s', labels_index)
 
 vocabulary = " ".join(texts)
 
 vocabulary = tf.compat.as_str(vocabulary).split()
-
-logger.debug('vocabulary: %s', vocabulary)
 
 logger.info('Total words: %s', len(vocabulary))
 logger.info('Unique words: %s', len(set(vocabulary)))
@@ -160,20 +165,35 @@ data, count, dictionary, reverse_dictionary = build_dataset(vocabulary, vocabula
 
 vocabulary_path = os.path.join(OUT_DIR, 'vocabulary.txt')
 dictionary_path = os.path.join(OUT_DIR, 'dictionary.txt')
+labels_path = os.path.join(OUT_DIR, 'labels.txt')
+labels_index_path = os.path.join(OUT_DIR, 'labels_index.txt')
 
 logger.info('Writing vocabulary to: %s', vocabulary_path)
 
 with open(vocabulary_path, 'w') as f:
     for i in vocabulary:
         f.write("{}\n".format(i))
+#
+#del vocabulary  # Hint to reduce memory.
+#
+#logger.info('Writing dictionary to: %s', dictionary_path)
+#
+#with open(dictionary_path, 'w') as f:
+#    for k, v in dictionary.items():
+#        f.write(str(k) + ', ' + str(v) + '\n')
+#
+#logger.info('Writing labels to: %s', labels_path)
+#
+#with open(labels_path, 'w') as f:
+#    for i in labels:
+#        f.write("{}\n".format(i))
+#
+#logger.debug('Writing labels_index to: %s', labels_index)
+#
+#with open(labels_index_path, 'w') as f:
+#    for k, v in labels_index.items():
+#        f.write(str(k) + ', ' + str(v) + '\n')
 
-del vocabulary  # Hint to reduce memory.
-
-logger.info('Writing vocabulary to: %s', dictionary_path)
-
-with open(dictionary_path, 'w') as f:
-    for i in dictionary:
-        f.write("{}\n".format(i))
 
 logger.debug('Most common words (+UNK): %s', count[:5])
 logger.debug('Sample data: %s ', data[:10])
@@ -387,10 +407,10 @@ def plot_with_labels(low_dim_embs, labels, skip_window):
   plt.savefig(out_file)
 
 
-def save_weights(data, index, filename='weights.csv'):
+def save_weights(data, labels, filename='weights.csv'):
     df = pd.DataFrame(
             data = data,
-            index = index
+            index = labels
             )
     logger.debug('weights size is %s', df.shape)
 
@@ -398,19 +418,12 @@ def save_weights(data, index, filename='weights.csv'):
     logger.info('Saving weights to %s', out_file)
     df.to_csv(out_file)
 
-try:
-  # pylint: disable=g-import-not-at-top
-  from sklearn.manifold import TSNE
-  import matplotlib.pyplot as plt
+    save_weights(final_embeddings, labels)
 
-  save_weights(final_embeddings, reverse_dictionary)
+tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000)
+labels = [reverse_dictionary[i] for i in range(plot_only)]
+low_dim_embs = tsne.fit_transform(final_embeddings[:plot_only, :])
+plot_with_labels(low_dim_embs, labels, skip_window = skip_window)
 
-  tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000)
-  labels = [reverse_dictionary[i] for i in range(plot_only)]
-  low_dim_embs = tsne.fit_transform(final_embeddings[:plot_only, :])
-  plot_with_labels(low_dim_embs, labels, skip_window = skip_window)
-
-except ImportError:
-  print('Please install sklearn, matplotlib, and scipy to show embeddings.')
 
 logger.info('Finished')
