@@ -98,8 +98,6 @@ for fname in filenames:
     labels_index[file] = label_id
     
     logger.debug('file: %s', file)
-    logger.debug('label_id: %s', label_id)
-    logger.debug('labels_index: %s', labels_index)
 
     with open(fname, 'r', encoding = 'utf-8') as f:
         logger.debug('Extracting text from %s', fname)
