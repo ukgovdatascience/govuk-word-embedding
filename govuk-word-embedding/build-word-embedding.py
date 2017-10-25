@@ -419,7 +419,7 @@ def save_weights(data, labels, filename='weights.csv'):
     logger.info('Saving weights to %s', out_file)
     df.to_csv(out_file)
 
-    save_weights(final_embeddings, labels)
+save_weights(final_embeddings, labels)
 
 tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000)
 labels = [reverse_dictionary[i] for i in range(plot_only)]
