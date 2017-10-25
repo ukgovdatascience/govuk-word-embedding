@@ -34,6 +34,9 @@ from six.moves import urllib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 from datetime import datetime
 from sklearn.manifold import TSNE
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 logging.config.fileConfig('logging.conf')
