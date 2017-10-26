@@ -413,13 +413,14 @@ def save_weights(data, labels, filename='weights.csv'):
             data = data,
             index = labels
             )
-    logger.debug('weights size is %s', df.shape)
-
+    logger.debug('Weights size is %s', df.shape)
+    logger.debug('Weights df: %s', df.head())
     out_file = os.path.join(OUT_DIR, filename)
     logger.info('Saving weights to %s', out_file)
     df.to_csv(out_file)
 
-save_weights(final_embeddings, labels)
+weights_labels = [reverse_dictionary[i] for i in range(final_embeddings.shape[0])]
+save_weights(final_embeddings, weights_labels)
 
 tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000)
 labels = [reverse_dictionary[i] for i in range(plot_only)]
