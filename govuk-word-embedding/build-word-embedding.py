@@ -107,40 +107,6 @@ def build_dataset(words, n_words):
 
 data, count, dictionary, reverse_dictionary = build_dataset(vocabulary, vocabulary_size)
 
-# Save out the various lists to disk
-
-vocabulary_path = os.path.join(OUT_DIR, 'vocabulary.txt')
-dictionary_path = os.path.join(OUT_DIR, 'dictionary.txt')
-labels_path = os.path.join(OUT_DIR, 'labels.txt')
-labels_index_path = os.path.join(OUT_DIR, 'labels_index.txt')
-
-logger.info('Writing vocabulary to: %s', vocabulary_path)
-
-with open(vocabulary_path, 'w') as f:
-    for i in vocabulary:
-        f.write("{}\n".format(i))
-#
-#del vocabulary  # Hint to reduce memory.
-#
-#logger.info('Writing dictionary to: %s', dictionary_path)
-#
-#with open(dictionary_path, 'w') as f:
-#    for k, v in dictionary.items():
-#        f.write(str(k) + ', ' + str(v) + '\n')
-#
-#logger.info('Writing labels to: %s', labels_path)
-#
-#with open(labels_path, 'w') as f:
-#    for i in labels:
-#        f.write("{}\n".format(i))
-#
-#logger.debug('Writing labels_index to: %s', labels_index)
-#
-#with open(labels_index_path, 'w') as f:
-#    for k, v in labels_index.items():
-#        f.write(str(k) + ', ' + str(v) + '\n')
-
-
 logger.debug('Most common words (+UNK): %s', count[:5])
 logger.debug('Sample data: %s ', data[:10])
 
