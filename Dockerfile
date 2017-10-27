@@ -21,7 +21,7 @@ WORKDIR /govuk-word-embedding
 
 RUN pip install -r requirements.txt
 
-ENV DATA_DIR /mnt/DATA/all-of-gov-uk
+ENV DATA_DIR /mnt/DATA/all-of-govuk
 ENV OUT_DIR /mnt/output
 ENV EMBEDDING_DIMS 128
 ENV SKIP_WINDOW 1
