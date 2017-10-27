@@ -21,11 +21,10 @@ import os
 import logging
 import logging.config
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.manifold import TSNE
-
-matplotlib.use('Agg')
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger('pipeline')
