@@ -39,7 +39,6 @@ VOCAB_FILE = os.getenv('VOCAB_FILE')
 REVERSE_DICT_FILE = os.path.join(OUT_DIR, 'reverse_dictionary.json')
 WEIGHTS_FILE = os.path.join(OUT_DIR, 'weights.csv')
 PLOT_DIMS = int(os.getenv('PLOT_DIMS'))
-REVERSE_DICT_FILE = os.getenv('REVERSE_DICT_FILE')
 
 logger.info('Loading reverse_dictionary to %s', REVERSE_DICT_FILE)
 
