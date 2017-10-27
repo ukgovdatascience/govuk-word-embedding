@@ -91,9 +91,6 @@ for fname in filenames:
 
 vocabulary = " ".join(texts)
 
-logger.info('Total words: %s', len(vocabulary))
-logger.info('Unique words: %s', len(set(vocabulary)))
-
 logger.info('Writing vocabulary to: %s', VOCAB_FILE)
 
 with open(VOCAB_FILE, 'w') as f:

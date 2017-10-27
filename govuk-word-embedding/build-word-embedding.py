@@ -17,28 +17,22 @@
 # Adapted from https://github.com/tensorflow/models/blob/master/tutorials/embedding/word2vec.py
 
 import re
-import tensorflow as tf
 import collections
-import pandas as pd
 import math
 import random
 import os
 import json
 import sys
-import matplotlib
-import numpy as np
 import logging
 import logging.config
+import tensorflow as tf
+import pandas as pd
+import numpy as np
 from glob import glob
 from lxml import etree
 from six.moves import urllib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 from datetime import datetime
-from sklearn.manifold import TSNE
-
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger('pipeline')
