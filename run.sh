@@ -7,8 +7,8 @@ docker run -i --rm \
     -v $OUT_DIR:/mnt/output \
     ukgovdatascience/govuk-word-embedding:latest python create-vocabulary.py
 
-docker run -i $ENV \
-    --env-file ./.env \
+docker run -i --rm \
+    --env-file $ENV \
     -v $DATA_DIR:/mnt/DATA \
     -v $OUT_DIR:/mnt/output \
     ukgovdatascience/govuk-word-embedding:latest python build-word-embedding.py
