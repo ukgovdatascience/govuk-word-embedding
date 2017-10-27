@@ -17,19 +17,15 @@
 # Adapted from https://github.com/tensorflow/models/blob/master/tutorials/embedding/word2vec.py
 
 import json
-import pandas as pd
 import os
-import sys
-import matplotlib
-import numpy as np
 import logging
 import logging.config
-from datetime import datetime
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
 from sklearn.manifold import TSNE
 
-import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger('pipeline')
@@ -50,28 +46,32 @@ logger.info('Loading reverse_dictionary to %s', REVERSE_DICT_FILE)
 with open(REVERSE_DICT_FILE, 'r') as f:
     reverse_dictionary = json.load(f)
 
+logger.info('reverse_dictionary is of length %s', len(reverse_dictionary))
+
 logger.info('Loading word embedding from %s', WEIGHTS_FILE)
 
 weights = pd.read_csv(WEIGHTS_FILE)
 final_embeddings = weights.iloc[:,1:].as_matrix()
 
 def plot_with_labels(low_dim_embs, labels):
-  assert low_dim_embs.shape[0] >= len(labels), 'More labels than embeddings'
-  plt.figure(figsize=(18, 18))  # in inches
-  for i, label in enumerate(labels):
-    x, y = low_dim_embs[i, :]
-    plt.scatter(x, y)
-    plt.annotate(label,
-                 xy=(x, y),
-                 xytext=(5, 2),
-                 textcoords='offset points',
-                 ha='right',
-                 va='bottom')
+    '''
+    Produce TSNE plot with labels
+    '''
+    assert low_dim_embs.shape[0] >= len(labels), 'More labels than embeddings'
+    plt.figure(figsize=(18, 18))  # in inches
+    for i, label in enumerate(labels):
+        x, y = low_dim_embs[i, :]
+        plt.scatter(x, y)
+        plt.annotate(label,
+                     xy=(x, y),
+                     xytext=(5, 2),
+                     textcoords='offset points',
+                     ha='right',
+                     va='bottom')
 
-  out_file = os.path.join(OUT_DIR, 'tsne.png')
-  logger.info('Saving TSNE plot to %s', out_file)
-  plt.savefig(out_file)
-
+    out_file = os.path.join(OUT_DIR, 'tsne.png')
+    logger.info('Saving TSNE plot to %s', out_file)
+    plt.savefig(out_file)
 
 logger.info('Creating TSNE')
 
