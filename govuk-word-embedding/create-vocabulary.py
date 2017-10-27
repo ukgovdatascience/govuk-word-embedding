@@ -53,8 +53,7 @@ for fname in filenames:
     logger.debug('Reading %s', fname)
 
     file = fname.replace(DATA_DIR,'')
-    
-    
+
     label_id = len(labels_index)
     labels_index[file] = label_id
     

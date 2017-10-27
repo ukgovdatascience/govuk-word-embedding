@@ -23,6 +23,7 @@ import pandas as pd
 import math
 import random
 import os
+import json
 import sys
 import matplotlib
 import numpy as np
@@ -44,10 +45,10 @@ logger = logging.getLogger('pipeline')
 
 # Define various variables
 
-REVERSE_DICT_FILE = os.path.join(OUT_DIR, 'reverse_dictionary.json')
 DATA_DIR = os.getenv('DATA_DIR')
 OUT_DIR = os.getenv('OUT_DIR')
 MODEL_DIR = os.path.join(OUT_DIR, 'saved_models')
+REVERSE_DICT_FILE = os.path.join(OUT_DIR, 'reverse_dictionary.json')
 VOCAB_FILE = os.getenv('VOCAB_FILE')
 vocabulary_size = int(os.getenv('VOCAB_SIZE'))
 

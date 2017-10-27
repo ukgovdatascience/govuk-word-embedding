@@ -16,6 +16,7 @@
 
 # Adapted from https://github.com/tensorflow/models/blob/master/tutorials/embedding/word2vec.py
 
+import json
 import pandas as pd
 import os
 import sys
@@ -52,8 +53,9 @@ with open(REVERSE_DICT_FILE, 'r') as f:
 logger.info('Loading word embedding from %s', WEIGHTS_FILE)
 
 weights = pd.read_csv(WEIGHTS_FILE)
+final_embeddings = weights.iloc[:,1:].as_matrix()
 
-def plot_with_labels(low_dim_embs, labels, skip_window):
+def plot_with_labels(low_dim_embs, labels):
   assert low_dim_embs.shape[0] >= len(labels), 'More labels than embeddings'
   plt.figure(figsize=(18, 18))  # in inches
   for i, label in enumerate(labels):
@@ -66,8 +68,7 @@ def plot_with_labels(low_dim_embs, labels, skip_window):
                  ha='right',
                  va='bottom')
 
-  filename = 'tsne_skips_' + str(skip_window) + '.png' 
-  out_file = os.path.join(OUT_DIR, filename)
+  out_file = os.path.join(OUT_DIR, 'tsne.png')
   logger.info('Saving TSNE plot to %s', out_file)
   plt.savefig(out_file)
 
@@ -78,10 +79,10 @@ tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000)
 
 logger.info('Limiting plot to %s words', PLOT_DIMS)
 
-labels = [reverse_dictionary[i] for i in range(PLOT_DIMS)]
+labels = [reverse_dictionary[str(i)] for i in range(PLOT_DIMS)]
 
 low_dim_embs = tsne.fit_transform(final_embeddings[:PLOT_DIMS, :])
 
-plot_with_labels(low_dim_embs, labels, skip_window = skip_window)
+plot_with_labels(low_dim_embs, labels)
 
 logger.info('Finished')
