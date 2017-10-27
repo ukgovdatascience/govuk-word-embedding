@@ -23,6 +23,7 @@ import pandas as pd
 import math
 import random
 import os
+import json
 import sys
 import matplotlib
 import numpy as np
@@ -47,9 +48,9 @@ logger = logging.getLogger('pipeline')
 DATA_DIR = os.getenv('DATA_DIR')
 OUT_DIR = os.getenv('OUT_DIR')
 MODEL_DIR = os.path.join(OUT_DIR, 'saved_models')
+REVERSE_DICT_FILE = os.path.join(OUT_DIR, 'reverse_dictionary.json')
 VOCAB_FILE = os.getenv('VOCAB_FILE')
 vocabulary_size = int(os.getenv('VOCAB_SIZE'))
-plot_only = int(os.getenv('PLOT_DIMS'))
 
 num_steps = int(os.getenv('NUM_STEPS'))
 batch_size = 128
@@ -106,6 +107,12 @@ def build_dataset(words, n_words):
 
 
 data, count, dictionary, reverse_dictionary = build_dataset(vocabulary, vocabulary_size)
+
+logger.info('Saving reverse_dictionary to %s', REVERSE_DICT_FILE)
+
+with open(REVERSE_DICT_FILE, 'w') as f:
+    json.dump(reverse_dictionary, f)
+
 
 logger.debug('Most common words (+UNK): %s', count[:5])
 logger.debug('Sample data: %s ', data[:10])
@@ -299,26 +306,6 @@ with tf.Session(graph=graph) as session:
 file_writer.close()
 # Step 6: Visualize the embeddings.
 
-
-def plot_with_labels(low_dim_embs, labels, skip_window):
-  assert low_dim_embs.shape[0] >= len(labels), 'More labels than embeddings'
-  plt.figure(figsize=(18, 18))  # in inches
-  for i, label in enumerate(labels):
-    x, y = low_dim_embs[i, :]
-    plt.scatter(x, y)
-    plt.annotate(label,
-                 xy=(x, y),
-                 xytext=(5, 2),
-                 textcoords='offset points',
-                 ha='right',
-                 va='bottom')
-
-  filename = 'tsne_skips_' + str(skip_window) + '.png' 
-  out_file = os.path.join(OUT_DIR, filename)
-  logger.info('Saving TSNE plot to %s', out_file)
-  plt.savefig(out_file)
-
-
 def save_weights(data, labels, filename='weights.csv'):
     df = pd.DataFrame(
             data = data,
@@ -332,11 +319,5 @@ def save_weights(data, labels, filename='weights.csv'):
 
 weights_labels = [reverse_dictionary[i] for i in range(final_embeddings.shape[0])]
 save_weights(final_embeddings, weights_labels)
-
-tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000)
-labels = [reverse_dictionary[i] for i in range(plot_only)]
-low_dim_embs = tsne.fit_transform(final_embeddings[:plot_only, :])
-plot_with_labels(low_dim_embs, labels, skip_window = skip_window)
-
 
 logger.info('Finished')
