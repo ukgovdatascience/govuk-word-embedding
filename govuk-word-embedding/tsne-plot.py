@@ -39,13 +39,19 @@ DATA_DIR = os.getenv('DATA_DIR')
 OUT_DIR = os.getenv('OUT_DIR')
 MODEL_DIR = os.path.join(OUT_DIR, 'saved_models')
 VOCAB_FILE = os.getenv('VOCAB_FILE')
+REVERSE_DICT_FILE = os.path.join(OUT_DIR, 'reverse_dictionary.json')
 WEIGHTS_FILE = os.path.join(OUT_DIR, 'weights.csv')
-plot_only = int(os.getenv('PLOT_DIMS'))
+PLOT_DIMS = int(os.getenv('PLOT_DIMS'))
+REVERSE_DICT_FILE = os.getenv('REVERSE_DICT_FILE')
+
+logger.info('Loading reverse_dictionary to %s', REVERSE_DICT_FILE)
+
+with open(REVERSE_DICT_FILE, 'r') as f:
+    reverse_dictionary = json.load(f)
 
 logger.info('Loading word embedding from %s', WEIGHTS_FILE)
 
-weights = df.read_csv(WEIGHTS_FILE)
-
+weights = pd.read_csv(WEIGHTS_FILE)
 
 def plot_with_labels(low_dim_embs, labels, skip_window):
   assert low_dim_embs.shape[0] >= len(labels), 'More labels than embeddings'
@@ -70,11 +76,11 @@ logger.info('Creating TSNE')
 
 tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000)
 
-logger.info('Limiting plot to %s words', plot_only)
+logger.info('Limiting plot to %s words', PLOT_DIMS)
 
-labels = [reverse_dictionary[i] for i in range(plot_only)]
+labels = [reverse_dictionary[i] for i in range(PLOT_DIMS)]
 
-low_dim_embs = tsne.fit_transform(final_embeddings[:plot_only, :])
+low_dim_embs = tsne.fit_transform(final_embeddings[:PLOT_DIMS, :])
 
 plot_with_labels(low_dim_embs, labels, skip_window = skip_window)
 
