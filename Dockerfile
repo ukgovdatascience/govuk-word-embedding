@@ -28,11 +28,4 @@ ENV SKIP_WINDOW 1
 ENV VOCAB_SIZE 300
 ENV PLOT_DIMS 300
 ENV NUM_STEPS 15001
-#RUN ./run.sh
-
-# ENTRYPOINT ["python"]
-
-# List Arguments for compilation (might be better as a script)
-
-# CMD ["import", "--experiment", "early_years", "input/early-years.csv"]
 

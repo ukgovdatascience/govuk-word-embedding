@@ -13,7 +13,7 @@ There are a large number of parameters that need to be set when launching the do
 ## Python scripts
 
 |Name|Function|input|output|
-|---|---|---|
+|----|--------|-----|------|
 |create-vocabulary.py|Builds the vocabulary file from a collection of html files stored in folders.|Raw html files arranged in folders.|vocubulary file|
 |build-word-embedding.py|Builds the word embedding from the vocabulary file.|vocabulary file|word_embedding, reverse_dictionary, tensorboard log, saved model|
 |tsne-plot.py|Produces tSNE plot using word embedding.|word_embedding, reverse_dictionary|tsne plot|
