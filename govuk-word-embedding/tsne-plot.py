@@ -25,19 +25,12 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.manifold import TSNE
+from settings import *
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger('pipeline')
 
 # Define various variables
-
-DATA_DIR = os.getenv('DATA_DIR')
-OUT_DIR = os.getenv('OUT_DIR')
-MODEL_DIR = os.path.join(OUT_DIR, 'saved_models')
-VOCAB_FILE = os.getenv('VOCAB_FILE')
-REVERSE_DICT_FILE = os.path.join(OUT_DIR, 'reverse_dictionary.json')
-WEIGHTS_FILE = os.path.join(OUT_DIR, 'weights.csv')
-PLOT_DIMS = int(os.getenv('PLOT_DIMS'))
 
 logger.info('Loading reverse_dictionary to %s', REVERSE_DICT_FILE)
 

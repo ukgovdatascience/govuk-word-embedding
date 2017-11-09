@@ -11,17 +11,10 @@ import numpy as np
 import pandas as pd
 from glob import glob
 from lxml import etree
+from settings import *
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger('pipeline')
-
-# Define various variables
-
-DATA_DIR = os.getenv('DATA_DIR')
-OUT_DIR = os.getenv('OUT_DIR')
-MODEL_DIR = os.path.join(OUT_DIR, 'saved_models')
-VOCAB_FILE = os.getenv('VOCAB_FILE')
-vocabulary_size = int(os.getenv('VOCAB_SIZE'))
 
 # Instantiate lists and dicts to fill
 
