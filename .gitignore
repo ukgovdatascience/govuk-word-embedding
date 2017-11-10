@@ -7,4 +7,5 @@ pip-selfcheck.json
 all-of-govuk
 */saved_models/
 */tf_logs/
-*/tsne_skips_1.png
+*.png
+.dockerignore
