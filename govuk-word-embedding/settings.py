@@ -11,7 +11,7 @@ VOCAB_FILE = os.getenv('VOCAB_FILE')
 
 # deep learning
 
-EMBEDDING_SIZE = int(os.getenv('EMBEDDING_DIMS'))
+EMBEDDING_SIZE = int(os.getenv('EMBEDDING_SIZE'))
 NUM_STEPS = int(os.getenv('NUM_STEPS'))
 ROOT_LOGDIR = os.path.join(OUT_DIR, "tf_logs")
 SKIP_WINDOW = int(os.getenv('SKIP_WINDOW'))

@@ -33,23 +33,14 @@ from lxml import etree
 from six.moves import urllib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 from datetime import datetime
+from settings import *
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger('pipeline')
 
 # Define various variables
 
-DATA_DIR = os.getenv('DATA_DIR')
-OUT_DIR = os.getenv('OUT_DIR')
-MODEL_DIR = os.path.join(OUT_DIR, 'saved_models')
-REVERSE_DICT_FILE = os.path.join(OUT_DIR, 'reverse_dictionary.json')
-VOCAB_FILE = os.getenv('VOCAB_FILE')
-vocabulary_size = int(os.getenv('VOCAB_SIZE'))
-
-num_steps = int(os.getenv('NUM_STEPS'))
 batch_size = 128
-embedding_size = int(os.getenv('EMBEDDING_DIMS'))  # Dimension of the embedding vector.
-skip_window = int(os.getenv('SKIP_WINDOW'))       # How many words to consider left and right.
 num_skips = 2         # How many times to reuse an input to generate a label.
 
 # We pick a random validation set to sample nearest neighbors. Here we limit the
@@ -100,7 +91,7 @@ def build_dataset(words, n_words):
   return data, count, dictionary, reversed_dictionary
 
 
-data, count, dictionary, reverse_dictionary = build_dataset(vocabulary, vocabulary_size)
+data, count, dictionary, reverse_dictionary = build_dataset(vocabulary, VOCABULARY_SIZE)
 
 logger.info('Saving reverse_dictionary to %s', REVERSE_DICT_FILE)
 
@@ -115,25 +106,25 @@ data_index = 0
 
 
 # Step 3: Function to generate a training batch for the skip-gram model.
-def generate_batch(batch_size, num_skips, skip_window):
+def generate_batch(batch_size, num_skips, SKIP_WINDOW):
   global data_index
   assert batch_size % num_skips == 0
-  assert num_skips <= 2 * skip_window
+  assert num_skips <= 2 * SKIP_WINDOW
   batch = np.ndarray(shape=(batch_size), dtype=np.int32)
   labels = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
-  span = 2 * skip_window + 1  # [ skip_window target skip_window ]
+  span = 2 * SKIP_WINDOW + 1  # [ SKIP_WINDOW target SKIP_WINDOW ]
   buffer = collections.deque(maxlen=span)
   for _ in range(span):
     buffer.append(data[data_index])
     data_index = (data_index + 1) % len(data)
   for i in range(batch_size // num_skips):
-    target = skip_window  # target label at the center of the buffer
-    targets_to_avoid = [skip_window]
+    target = SKIP_WINDOW  # target label at the center of the buffer
+    targets_to_avoid = [SKIP_WINDOW]
     for j in range(num_skips):
       while target in targets_to_avoid:
         target = random.randint(0, span - 1)
       targets_to_avoid.append(target)
-      batch[i * num_skips + j] = buffer[skip_window]
+      batch[i * num_skips + j] = buffer[SKIP_WINDOW]
       labels[i * num_skips + j, 0] = buffer[target]
     buffer.append(data[data_index])
     data_index = (data_index + 1) % len(data)
@@ -141,7 +132,7 @@ def generate_batch(batch_size, num_skips, skip_window):
   data_index = (data_index + len(data) - span) % len(data)
   return batch, labels
 
-batch, labels = generate_batch(batch_size=8, num_skips=2, skip_window=1)
+batch, labels = generate_batch(batch_size=8, num_skips=2, SKIP_WINDOW=1)
 for i in range(8):
   logger.debug('%s %s -> %s %s', batch[i], reverse_dictionary[batch[i]], 
           labels[i, 0], reverse_dictionary[labels[i, 0]])
@@ -181,7 +172,7 @@ with graph.as_default():
       # Look up embeddings for inputs.
     embeddings = tf.Variable(
             tf.random_uniform(
-            shape = [vocabulary_size, embedding_size], 
+            shape = [VOCABULARY_SIZE, EMBEDDING_SIZE], 
             minval = -1.0, 
             maxval = 1.0
             ))
@@ -193,13 +184,13 @@ with graph.as_default():
 
     nce_weights = tf.Variable(
         tf.truncated_normal(
-            shape = [vocabulary_size, embedding_size],
-            stddev=1.0 / math.sqrt(embedding_size))
+            shape = [VOCABULARY_SIZE, EMBEDDING_SIZE],
+            stddev=1.0 / math.sqrt(EMBEDDING_SIZE))
         )
 
     # Set the weights to zero
 
-    nce_biases = tf.Variable(tf.zeros([vocabulary_size]))
+    nce_biases = tf.Variable(tf.zeros([VOCABULARY_SIZE]))
 
   # Compute the average NCE loss for the batch.
   # tf.nce_loss automatically draws a new sample of the negative labels each
@@ -210,7 +201,7 @@ with graph.as_default():
                      labels=train_labels,
                      inputs=embed,
                      num_sampled=num_sampled,
-                     num_classes=vocabulary_size))
+                     num_classes=VOCABULARY_SIZE))
 
   # Construct the SGD optimizer using a learning rate of 1.0.
   optimizer = tf.train.GradientDescentOptimizer(1.0).minimize(loss)
@@ -258,9 +249,9 @@ with tf.Session(graph=graph) as session:
   logger.info('Tensorflow session initialized')
 
   average_loss = 0
-  for step in xrange(num_steps):
+  for step in xrange(NUM_STEPS):
     batch_inputs, batch_labels = generate_batch(
-        batch_size, num_skips, skip_window)
+        batch_size, num_skips, SKIP_WINDOW)
     feed_dict = {train_inputs: batch_inputs, train_labels: batch_labels}
 
     # We perform one update step by evaluating the optimizer op (including it
