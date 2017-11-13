@@ -12,6 +12,7 @@ import pandas as pd
 from glob import glob
 from lxml import etree
 from settings import *
+from nltk.corpus import stopwords
 
 logging.config.fileConfig('logging.conf')
 logger = logging.getLogger('pipeline')
@@ -81,10 +82,26 @@ for fname in filenames:
         f.close()
         labels.append(label_id)
 
+alphabet = ' '.join('abcdefghijklmnopqrstuvwxyz').split()
+english_stops = stopwords.words('english')
+english_stops.extend(alphabet)
+english_stops = set(english_stops)
 
-vocabulary = " ".join(texts)
+texts_list = " ".join(texts).split()
+vocabulary_length = len(texts_list)
+vocabulary = []
 
-logger.info('Writing vocabulary to: %s', VOCAB_FILE)
+for i, word in enumerate(texts_list):
+
+	if i % 10000 == 0:
+		logger.info('Checking word %s of %s (%s)', i, vocabulary_length, int(np.round(i/vocabulary_length * 100)))
+
+	if word not in english_stops:
+		vocabulary.append(word)
+
+vocabulary = " ".join(vocabulary)
+
+logger.info('Writing vocabulary without stop words to: %s', VOCAB_FILE)
 
 with open(VOCAB_FILE, 'w') as f:
     f.write(vocabulary)
