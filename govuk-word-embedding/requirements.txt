@@ -17,4 +17,4 @@ six==1.10.0
 SQLAlchemy==1.1.11
 tensorflow==1.2.1
 Werkzeug==0.12.2
-lxml==4.0.0
+lxml==4.6.3
