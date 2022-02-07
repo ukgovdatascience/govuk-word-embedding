@@ -15,6 +15,6 @@ scikit-learn==0.18.2
 scipy==0.19.1
 six==1.10.0
 SQLAlchemy==1.1.11
-tensorflow==1.2.1
+tensorflow==2.5.3
 Werkzeug==0.12.2
 lxml==4.0.0
